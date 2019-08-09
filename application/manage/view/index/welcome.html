@@ -1,0 +1,209 @@
+<script src="__STATIC_LIB__echarts/build/dist/echarts.js"></script>
+<div class="layadmin-tabsbody-item layui-show">
+
+        <div class="layui-row layui-col-space15">
+
+
+
+            <div class="layui-col-md6">
+                <div class="layui-card">
+                    <div class="layui-card-header">
+                        <i class="iconfont icon-dingdan1"></i>最近登录
+                    </div>
+
+                    <div class="layui-card-body" id="loginLog"></div>
+
+                </div>
+            </div>
+
+            <div class="layui-col-md6">
+                <div class="layui-card">
+                    <div class="layui-card-header loading-more">
+                        <div><i class="iconfont icon-dingdan1"></i>操作日志</div>
+                        <a href="{:url('OperationLog/index')}">查看更多>></a>
+                    </div>
+                    <div class="layui-card-body" id="oplog-table"></div>
+                </div>
+            </div>
+
+            <script id="demo" type="text/html">
+                <table class="layui-table">
+                    <tbody>
+                        {{# for(var i = 0; i
+                        < d.length; i++){ }} <tr>
+                            <td><i>{{i+1}}</i><a class="notice" href="javascript:;" id="{{d[i].id}}">{{ d[i].title }}</a></td>
+                            </tr>
+                            {{# } }} {{# if(d.length === 0){ }} 没有最新的数据 {{# } }}
+                    </tbody>
+                </table>
+            </script>
+
+
+            <script id="log" type="text/html">
+
+                {{# if(d.length === 0){ }} 没有历史记录 {{# }else{ }}
+                <table class="layui-table">
+                    <thead>
+                        <tr>
+                            <th>状态</th>
+                            <th>记录时间</th>
+                            <th>登录IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{# layui.each(d, function(index, item){ }}
+                        <tr>
+                            <td>{{ item.state }}</td>
+                            <td>{{ item.ctime }}</td>
+                            <td>{{ item.ip }}</td>
+                        </tr>
+                        {{# }); }}
+                    </tbody>
+                </table>
+                {{# } }}
+            </script>
+
+
+
+
+            <script id="oplog" type="text/html">
+
+                {{# if(d.length === 0){ }} 没有操作记录 {{# }else{ }}
+                <table class="layui-table">
+                    <thead>
+                        <tr>
+                            <th>操作员</th>
+                            <th>操作时间</th>
+                            <th>操作内容</th>
+                            <th>操作IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{# layui.each(d, function(index, item){ }}
+                        <tr>
+                            <td>{{ item.username }}</td>
+                            <td>{{ item.ctime }}</td>
+                            <td>{{ item.desc }}</td>
+                            <td>{{ item.ip }}</td>
+                        </tr>
+                        {{# }); }}
+                    </tbody>
+                </table>
+                {{# } }}
+            </script>
+
+
+            <script type="text/javascript">
+                layui.use(['laytpl', 'layer'], function() {
+                    var $ = layui.$,
+                        laytpl = layui.laytpl,
+                        layer = layui.layer;
+                    $.get("{:url('manage/administrator/getVersion')}", function(data) {
+                        var getTpl = version.innerHTML,
+                            view = document.getElementById('view');
+                        laytpl(getTpl).render(data.data, function(html) {
+                            view.innerHTML = html;
+                        });
+                    });
+
+
+                    //获取历史登录记录
+                    $.get("{:url('manage/User/userLogList',array('state'=>1))}", function(data) {
+                        var getTpl = log.innerHTML,
+                            view = document.getElementById('loginLog');
+                        laytpl(getTpl).render(data.data, function(html) {
+                            view.innerHTML = html;
+                        })
+                    });
+                    JsGet("{:url('manage/OperationLog/getLastLog')}", function(data) {
+                        var getTpl = oplog.innerHTML,
+                            view = document.getElementById('oplog-table');
+                        laytpl(getTpl).render(data.data, function(html) {
+                            view.innerHTML = html;
+                        })
+                    });
+                });
+                // 路径配置
+                require.config({
+                    paths: {
+                        echarts: '__STATIC_LIB__echarts/build/dist'
+                    }
+                });
+                require(
+                    ['echarts', 'echarts/chart/line'],
+                    function(ec) {
+                        var myChart = ec.init(document.getElementById('main'));
+                        var option = {
+                            title: {
+                                text: '最近7天订单量统计'
+                            },
+                            tooltip: {
+                                show: true
+                            },
+                            legend: {},
+                            yAxis: [{
+                                type: 'value'
+                            }],
+                            xAxis: [],
+                            series: []
+                        };
+                        $.get('{:url("order/statistics")}').done(function(data) {
+                            myChart.setOption({
+                                legend: data.legend,
+                                xAxis: data.xAxis,
+                                series: data.series
+                            });
+                        });
+                        myChart.setOption(option);
+                    }
+                );
+                require(
+                    [
+                        'echarts',
+                        'echarts/chart/line' // 使用柱状图就加载bar模块，按需加载
+                    ],
+
+
+                    function(ec) {
+                        // 基于准备好的dom，初始化echarts图表
+                        var myChart = ec.init(document.getElementById('users'));
+
+                        var option = {
+
+                            tooltip: {
+                                show: true
+                            },
+                            legend: {},
+                            xAxis: [],
+                            yAxis: [],
+                            series: []
+                        };
+                        $.get('{:url("user/statistics")}').done(function(data) {
+                            myChart.setOption({
+                                legend: data.legend,
+                                xAxis: data.xAxis,
+                                series: data.series
+                            });
+                        });
+                        // 为echarts对象加载数据
+                        myChart.setOption(option);
+                    }
+                );
+            </script>
+        </div>
+</div>
+<style>
+    .loading-more {
+        overflow: hidden;
+    }
+    
+    .loading-more>div {
+        display: inline-block;
+    }
+    
+    .loading-more a {
+        float: right;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+</style>
